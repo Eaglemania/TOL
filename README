@@ -1,0 +1,10 @@
+left click - add/remove cell
+space - start/stop trip
+del - reset trip
+enter - create a new trip
+S - save
+L - load
+
+
+red/blue cells have more/less than 3 neighbours and will die in the next generation,
+green cells have exactly 3 neighbours and will live.
