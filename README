@@ -1,7 +1,4 @@
-Written in python with the pyglet multimedia library.
-
-Requirements:
-Python 2.7
+to start run: trip of life.pyw
 
 left click - add/remove cell
 space - start/stop trip
@@ -12,3 +9,8 @@ L - load
 
 red/blue cells have more/less than 3 neighbours and will die in the next generation,
 green cells have exactly 3 neighbours and will live.
+
+
+
+Written in python 2.7 with the pyglet multimedia library.
+
