@@ -2,14 +2,23 @@ to start run: trip of life.pyw
 
 left click - add/remove cell
 space - start/stop trip
+N - next step
 del - reset trip
 enter - create a new trip
 S - save
 L - load
 
-red/blue cells have more/less than 3 neighbours and will die in the next generation,
-green cells have exactly 3 neighbours and will live.
+Full cells are alive, empty cells are dead
 
+The colors for full cells mean:
+Red - to many neighbours, will die.
+Blue - to few neighbours, will die.
+Green - will survive.
+
+And for empty cells:
+Red - to many neighbours, won't spawn.
+Blue - to few neighbours, won't spawn.
+Green - will spawn.
 
 
 Written in python 2.7 with the pyglet multimedia library.

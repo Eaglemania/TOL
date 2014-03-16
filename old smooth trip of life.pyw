@@ -6,7 +6,6 @@ from Tkinter import *
 from tkFileDialog import askopenfilename, asksaveasfilename
 
 size = 8
-half_size = size/2
 extension = {"defaultextension":"life", "filetypes":[('life','.life')]}
 
 
@@ -45,40 +44,18 @@ class Cell(object):
         self.y = y
         self.state = False
         self.neighbours = 0
-        self.vertex_list = self.dead_vertex_list()
+        self.vertex_list = self.vertex_list()
 
-    def set_vertex_list(self):
-        self.vertex_list.delete()
-        if self.state:
-            self.vertex_list = self.alive_vertex_list()
-            
-        else:
-            self.vertex_list = self.dead_vertex_list()
-
-    def dead_vertex_list(self):
-        x = self.x * size
-        y = self.y * size
-        vertices = (x+half_size, y,
-                    x, y+half_size,
-                    x, y+half_size,
-                    x+half_size, y+size,
-                    x+half_size, y+size,
-                    x+size, y+half_size,
-                    x+size, y+half_size,
-                    x+half_size, y)
-        return self.batch.add(8, GL_LINES, self.group, ('v2i', vertices), ('c3B', self.color(8))) 
-
-
-    def alive_vertex_list(self):
+    def vertex_list(self):
         x = self.x * size
         y = self.y * size
         vertices = (x, y,
                     x, y+size,
                     x+size, y+size,
                     x+size, y)
-        return self.batch.add(4, GL_QUADS, self.group, ('v2i', vertices), ('c3B', self.color(4)))
+        return self.batch.add(4, GL_QUADS, self.group, ('v2i', vertices), ('c3B', self.color()))
 
-    def color(self, count):
+    def color(self):
         red = 0
         green = 0
         blue = 0
@@ -90,18 +67,39 @@ class Cell(object):
             else:
                 green = 255
         else:
-            if self.neighbours > 3:
-                red = 60
-            elif self.neighbours < 3:
-                blue = 60
-            else:
-                green = 100
-                
-        return (red, green, blue)*count
+            if self.neighbours == 3:
+                red = 50
+                blue = 50
+                green = 150
+            elif self.neighbours == 2 or self.neighbours == 4:
+                red = 30
+                blue = 30
+                green = 90
+            elif self.neighbours == 1 or self.neighbours == 5:
+                red = 25
+                blue = 25
+                green = 75
+            elif self.neighbours == 6:
+                red = 20
+                blue = 20
+                green = 60
+            elif self.neighbours == 6:
+                red = 15
+                blue = 15
+                green = 45
+            elif self.neighbours == 7:
+                red = 10
+                blue = 10
+                green = 30
+            elif self.neighbours == 8:
+                red = 5
+                blue = 5
+                green = 15
+        return (red, green, blue)*4
 
     def set_color(self):
-        self.vertex_list.colors = self.color(len(self.vertex_list.vertices)/2)
-
+        self.vertex_list.colors = self.color()
+    
     def toggle(self):
         self.set_state(not self.state)
 
@@ -114,13 +112,14 @@ class Cell(object):
     def die(self):
         if self.state:
             self.state = False
-            self.set_vertex_list()
+            self.set_color()
             self.mod_neighbours(-1)
 
+                                
     def spawn(self):
         if not self.state:
             self.state = True
-            self.set_vertex_list()
+            self.set_color()
             self.mod_neighbours(1)
 
     def reset(self):
