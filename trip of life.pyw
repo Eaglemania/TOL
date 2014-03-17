@@ -126,7 +126,7 @@ class Cell(object):
     def reset(self):
         self.state = False
         self.neighbours = 0
-        self.set_color()
+        self.set_vertex_list()
     
     def mod_neighbours(self, mod):
         for x in range(-1,2):
@@ -142,6 +142,32 @@ class Cell(object):
                         pass
 
 
+class GameHandlers(object):
+    def __init__(self, game):
+        self.game = game
+        self.game.app.window.push_handlers(self)
+        
+    def on_key_press(self, symbol, modifiers):
+        if not modifiers & key.MOD_CTRL:
+            if symbol == key.SPACE:
+                self.game.toggle()
+            elif symbol == key.DELETE:
+                self.game.reset()
+            elif symbol == key.ENTER:
+                self.game.create_dialog()
+            elif symbol == key.S:
+                self.game.save_dialog()
+            elif symbol == key.L:
+                self.game.load_dialog()
+            elif symbol == key.N:
+                self.game.next_step()
+        
+    def on_mouse_press(self, x, y, button, modifiers):
+        self.game.draw_press(x,y)
+ 
+    def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
+        self.game.draw_drag(x,y)
+    
 
 class Game(object):
     def __init__(self, app, columns, rows):
@@ -150,33 +176,9 @@ class Game(object):
         self.tk = None
         self.draw_last = (-1,-1)
         self.draw_state = True
-        self.decorate_handlers()
+        self.handlers = GameHandlers(self)
         self.create(columns, rows)
 
-
-    def decorate_handlers(self):
-        @app.window.event
-        def on_key_press(symbol, modifiers):
-            if symbol == key.SPACE:
-                self.toggle()
-            elif symbol == key.DELETE:
-                self.reset()
-            elif symbol == key.ENTER:
-                self.create_dialog()
-            elif symbol == key.S:
-                self.save_dialog()
-            elif symbol == key.L:
-                self.load_dialog()
-            elif symbol == key.N:
-                self.next_step()
-            
-        @app.window.event
-        def on_mouse_press(x, y, button, modifiers):
-            self.draw_press(x,y)
-     
-        @app.window.event
-        def on_mouse_drag(x, y, dx, dy, button, modifiers):
-            self.draw_drag(x,y)
 
     def next_step(self):
         if not self.running:
@@ -328,7 +330,8 @@ class Game(object):
         for x in range(columns):
             for y in range(rows):
                 self.world[(x,y)] = Cell(self, x, y)
-        self.app.window.set_size(columns*size,rows*size)
+        if not self.app.window.fullscreen:
+            self.app.window.set_size(columns*size,rows*size)
         
         
     def toggle(self):

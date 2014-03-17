@@ -4,12 +4,12 @@ from pyglet.window import key
 
 """
     KEYS:
-    
+        
         ESC - close window
-        F - toggle fps counter
-        M - maximize fps (even if there is nothing new to draw, draw the same things again. i think there is less stutter)
-        V - toggle vsync (not only affects draw event but all scheduled events running above vsync fps i think, thus crippeling simulations etc)
-
+        CTRL+F - toggle fps counter
+        CTRL+M - maximize fps (even if there is nothing new to draw, draw the same things again. i think there is less stutter)
+        CTRL+V - toggle vsync (not only affects draw event but all scheduled events running above vsync fps i think, thus crippeling simulations etc)
+        CTRL+ENTER - toggle fullscreen (very bugged for the game of life tho)
     yeaaahhh.....
 """
 
@@ -20,7 +20,31 @@ def spam(dt):
     #there is alot of strangeness here, sometimes when i toggle it it works great tho
     pass
 
-class App:
+class AppHandlers(object):
+    def __init__(self, app):
+        self.app = app
+        self.app.window.push_handlers(self)
+        
+    def on_close(self):
+        self.app.save_config()
+            
+    def on_draw(self):
+        self.app.window.clear()
+        for thing in self.app.drawables:
+            thing.draw()
+                
+    def on_key_press(self, symbol, modifiers):
+        if modifiers & key.MOD_CTRL:
+            if symbol == key.F:
+                self.app.show_fps(not config.show_fps)
+            elif symbol == key.M:
+                self.app.max_fps(not config.max_fps)
+            elif symbol == key.V:
+                self.app.vsync(not config.vsync)
+            elif symbol == key.ENTER:
+                    self.app.fullscreen(not config.fullscreen)
+        
+class App(object):
     
     def __init__(self):
         self.window = pyglet.window.Window(width = config.width,
@@ -42,27 +66,8 @@ class App:
         #which is normal i guess... but for now, the resolution will change.
         self.fullscreen(config.fullscreen)
 
-        @self.window.event
-        def on_close():
-            self.save_config()
-            
-        @self.window.event
-        def on_draw():
-            self.window.clear()
-            for thing in self.drawables:
-                thing.draw()
-                
-        @self.window.event
-        def on_key_press(symbol, modifiers):
-            if symbol == key.F:
-                self.show_fps(not config.show_fps)
-            elif symbol == key.M:
-                self.max_fps(not config.max_fps)
-            elif symbol == key.V:
-                self.vsync(not config.vsync)
-            elif symbol == key.ENTER:
-                self.fullscreen(not config.fullscreen)
-
+        self.handlers = AppHandlers(self)
+        
 
     def rebatch(self):
         if self.batch in self.drawables:
@@ -72,7 +77,8 @@ class App:
         
         if self.fps_display in self.drawables:
             self.drawables.remove(self.fps_display)
-        self.drawables.append(self.fps_display)
+        if config.show_fps:
+            self.drawables.append(self.fps_display)
         
         @self.window.event
         def on_draw():
