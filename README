@@ -1,6 +1,8 @@
 to start run: trip of life.pyw
 
-left click - add/remove cell
+left click - add cell
+right click - remove cell
+mouse wheel - increase/decrease draw size
 space - start/stop trip
 N - next step
 del - reset trip
