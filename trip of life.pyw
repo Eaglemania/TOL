@@ -170,26 +170,56 @@ class CursorHandlers(object):
         self.game = game
         game.app.window.push_handlers(self)
 
+    def on_mouse_press(self, x, y, button, modifiers):
+        self.game.cursor.draw(x, y, button)
+
 
     def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
         self.game.cursor.move(x, y)
+        self.game.cursor.draw(x, y, button)
 
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.game.cursor.move(x, y) 
 
 
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+        self.game.cursor.set_size(int(scroll_y)*size)
+
+
 
 class Cursor(object):
     def __init__(self, game):
         self.handlers = CursorHandlers(game)
+        self.game = game
         self.app = game.app
         self.app.window.set_mouse_visible(False)
         x = self.app.mouse.x - self.app.mouse.x % size
         y = self.app.mouse.y - self.app.mouse.y % size
+        self.size = size
         self.last = (x, y)
         self.vertex_list = self.app.batch.add(24, GL_LINES, self.app.text_group, ('v2i', self.vertices(x, y)), ('c4B', self.color()))
 
+
+    def draw(self, x, y, button):
+        x = x / size
+        y = y / size
+        if self.game.tk is None: 
+            if button == pyglet.window.mouse.LEFT:
+                self.game.set_states(x, y, self.size/size, True)
+            elif button == pyglet.window.mouse.RIGHT:
+                self.game.set_states(x, y, self.size/size, False)
+
+
+    def set_size(self, mod):
+        mod * size
+        self.size += mod
+        if self.size < size:
+            self.size = size
+        x = self.app.mouse.x - self.app.mouse.x % size
+        y = self.app.mouse.y - self.app.mouse.y % size
+        self.update_vertices(x, y)
+    
     
     def color(self):
         shadow = (0,0,0,200)*8
@@ -202,31 +232,31 @@ class Cursor(object):
     
     def vertices(self, x, y):
         shadow = (x, y,
-                  x+size, y,
-                  x+size, y,
-                  x+size, y+size,
-                  x+size, y+size,
-                  x, y+size,
-                  x, y+size,
+                  x+self.size, y,
+                  x+self.size, y,
+                  x+self.size, y+self.size,
+                  x+self.size, y+self.size,
+                  x, y+self.size,
+                  x, y+self.size,
                   x, y)
             
         inside = (x-1, y-1,
-                  x+size+1, y-1,
-                  x+size+1, y-1,
-                  x+size+1, y+size+1,
-                  x+size+1, y+size+1,
-                  x-1, y+size+1,
-                  x-1, y+size+1,
+                  x+self.size+1, y-1,
+                  x+self.size+1, y-1,
+                  x+self.size+1, y+self.size+1,
+                  x+self.size+1, y+self.size+1,
+                  x-1, y+self.size+1,
+                  x-1, y+self.size+1,
                   x-1, y-1)
 
-        outside = (x, y+half_size,
-                   x-big_size, y+half_size,
-                   x+size, y+half_size,
-                   x+size+big_size, y+half_size,
-                   x+half_size, y+size,
-                   x+half_size, y+size+big_size,
-                   x+half_size, y,
-                   x+half_size, y-big_size)
+        outside = (x, y+self.size/2,
+                   x-big_size, y+self.size/2,
+                   x+self.size, y+self.size/2,
+                   x+self.size+big_size, y+self.size/2,
+                   x+self.size/2, y+self.size,
+                   x+self.size/2, y+self.size+big_size,
+                   x+self.size/2, y,
+                   x+self.size/2, y-big_size)
         
         return shadow+inside+outside
 
@@ -235,9 +265,12 @@ class Cursor(object):
         x -= x % size
         y -= y % size
         if self.last != (x,y):
-            self.vertex_list.vertices = self.vertices(x, y)
+            self.update_vertices(x, y)
 
+    def update_vertices(self, x, y):
+        self.vertex_list.vertices = self.vertices(x, y)
 
+    
     def delete(self):
         self.vertex_list.delete()
         self.app.window.set_mouse_visible(True)
@@ -268,19 +301,6 @@ class GameHandlers(object):
             elif symbol == key.C:
                 self.game.toggle_cursor()
 
-
-    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
-        self.game.next_step()
-
-        
-    def on_mouse_press(self, x, y, button, modifiers):
-        self.game.draw_press(x,y)
-
- 
-    def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
-        self.game.draw_drag(x,y)
-
-
         
 class Game(object):
     def __init__(self, app, columns, rows):
@@ -295,6 +315,17 @@ class Game(object):
         self.create(columns, rows)
 
 
+    def set_states(self, x, y, size, state):
+        for xx in range(size):
+            for yy in range(size):
+                try:
+                    cell = self.world[x+xx,y+yy]
+                    if cell.state != state:
+                        cell.set_state(state)
+                except KeyError:
+                    pass
+
+
     def toggle_cursor(self):
         if self.cursor is None:
             self.cursor = Cursor(self)
@@ -306,28 +337,6 @@ class Game(object):
     def next_step(self):
         if not self.running:
             self.update()
-    
-
-    def draw_press(self, x, y):
-        if self.tk is None:
-            try:
-                cell = self.world[x/size,y/size]
-                cell.toggle()
-                self.draw_state = cell.state
-            except KeyError:
-                pass
-
-    
-    def draw_drag(self, x, y):
-        if self.tk is None:
-            try:
-                now = (x/size, y/size)
-                cell = self.world[now]
-                if self.draw_last != now and cell.state != self.draw_state:
-                    self.world[now].set_state(self.draw_state)
-                    self.draw_last = now      
-            except KeyError:
-                pass
             
 
     def save_dialog(self):
