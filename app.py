@@ -1,6 +1,6 @@
 import pyglet, config
 from pyglet.window import key
-
+from pyglet.gl import *
 
 """
     KEYS:
@@ -14,24 +14,30 @@ from pyglet.window import key
 """
 
 
+
 def spam(dt):
     #for spamming the pyglet event loop with.
     #to force max amount of draw events?
     #there is alot of strangeness here, sometimes when i toggle it it works great tho
     pass
 
+
+
 class AppHandlers(object):
     def __init__(self, app):
         self.app = app
         self.app.window.push_handlers(self)
+
         
     def on_close(self):
         self.app.save_config()
+
             
     def on_draw(self):
         self.app.window.clear()
         for thing in self.app.drawables:
             thing.draw()
+
                 
     def on_key_press(self, symbol, modifiers):
         if modifiers & key.MOD_CTRL:
@@ -43,14 +49,35 @@ class AppHandlers(object):
                 self.app.vsync(not config.vsync)
             elif symbol == key.ENTER:
                     self.app.fullscreen(not config.fullscreen)
-        
+
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.app.mouse.x = x
+        self.app.mouse.y = y
+
+
+    def on_mouse_drag(self, x, y, dx, dy, button, modifiers):
+        self.app.mouse.x = x
+        self.app.mouse.y = y
+
+
+
+class Mouse(object):
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+
+
+
 class App(object):
-    
     def __init__(self):
         self.window = pyglet.window.Window(width = config.width,
                                            height = config.height,
                                            vsync = config.vsync,
                                            resizable = config.resizable)
+        
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA) 
 
         self.batch = pyglet.graphics.Batch()
         self.sprite_group = pyglet.graphics.OrderedGroup(0)
@@ -66,25 +93,9 @@ class App(object):
         #which is normal i guess... but for now, the resolution will change.
         self.fullscreen(config.fullscreen)
 
+        self.mouse = Mouse()
+        
         self.handlers = AppHandlers(self)
-        
-
-    def rebatch(self):
-        if self.batch in self.drawables:
-            self.drawables.remove(self.batch)
-        self.batch = pyglet.graphics.Batch()
-        self.drawables.append(self.batch)
-        
-        if self.fps_display in self.drawables:
-            self.drawables.remove(self.fps_display)
-        if config.show_fps:
-            self.drawables.append(self.fps_display)
-        
-        @self.window.event
-        def on_draw():
-            self.window.clear()
-            for thing in self.drawables:
-                thing.draw()
 
                 
     def save_config(self):

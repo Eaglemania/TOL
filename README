@@ -7,6 +7,7 @@ del - reset trip
 enter - create a new trip
 S - save
 L - load
+C - toggle cursor
 
 Full cells are alive, empty cells are dead
 

@@ -7,7 +7,7 @@ from tkFileDialog import askopenfilename, asksaveasfilename
 
 
 
-size = 8
+size = 64
 half_size = size/2
 double_size = size*2
 big_size = size*32
@@ -156,8 +156,13 @@ class Cell(object):
                 if x == 0 and y == 0:
                     pass
                 else:
+                    xx = self.x+x
+                    yy = self.y+y
+
+                    if self.game.wrapping:
+                        xx, yy = self.game.wrapped(xx, yy)
                     try:
-                        cell = self.world[(self.x+x, self.y+y)]
+                        cell = self.world[(xx, yy)]
                         cell.neighbours += mod
                         cell.set_color()
                     except KeyError:
@@ -267,6 +272,8 @@ class GameHandlers(object):
                 self.game.next_step()
             elif symbol == key.C:
                 self.game.toggle_cursor()
+            elif symbol == key.W:
+                self.game.wrapping = not self.game.wrapping
 
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
@@ -317,11 +324,28 @@ class Game(object):
             except KeyError:
                 pass
 
+    def wrapped(self, x, y):
+        if x >= self.columns:
+            x -= self.columns
+        elif x < 0:
+            x += self.columns
+        if y >= self.rows:
+            y -= self.rows
+        elif y < 0:
+            y += self.rows 
+        
+        return (x, y)
     
     def draw_drag(self, x, y):
         if self.tk is None:
             try:
-                now = (x/size, y/size)
+                x = x/size
+                y = y/size
+
+                if self.wrapping:
+                    x, y = self.wrapped(x, y)
+
+                now = (x, y)
                 cell = self.world[now]
                 if self.draw_last != now and cell.state != self.draw_state:
                     self.world[now].set_state(self.draw_state)
